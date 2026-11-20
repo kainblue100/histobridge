@@ -1,0 +1,25 @@
+# data and outputs never enter the repo
+manifest.csv
+manifest_summary.json
+data/
+results/
+weights/
+*.svs
+*.rds
+*.h5
+*.ome.tif
+*.zarr
+*.parquet
+*.csv.gz
+
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.ipynb_checkpoints/
+
+# editors
+.vscode/
+.idea/
+.DS_Store
