@@ -48,10 +48,22 @@ def collect():
             full = os.path.join(dirpath, fn)
             rel = os.path.relpath(full, ROOT).replace("\\", "/")
             out[rel] = full
+
+    # git check-ignore only works inside a git repository. If the directory has
+    # never been `git init`-ed it fails silently and returns nothing, so the
+    # filter does nothing and ignored files get published -- exactly what
+    # happened to the third-party PDF here. Ensure a repo exists first.
+    if not os.path.isdir(os.path.join(ROOT, ".git")):
+        subprocess.run(["git", "init", "-q"], cwd=ROOT, capture_output=True)
+        print("  initialised a local git repo so .gitignore is honoured")
+
     if out:
         p = subprocess.run(["git", "check-ignore", "--stdin", "-z"], cwd=ROOT,
                            input="\0".join(out), capture_output=True, text=True)
-        for rel in [s for s in p.stdout.split("\0") if s]:
+        ignored = [s for s in p.stdout.split("\0") if s]
+        if ignored:
+            print(f"  .gitignore excludes {len(ignored)} file(s)")
+        for rel in ignored:
             out.pop(rel, None)
     return out
 
@@ -118,6 +130,23 @@ def main():
                    {"content": base64.b64encode(data).decode(), "encoding": "base64"})
         entries.append({"path": rel, "mode": "100644", "type": "blob",
                         "sha": blob["sha"]})
+
+    # Files present on the remote but not in the working tree must be deleted
+    # explicitly: with base_tree set, a path the new tree does not mention is
+    # retained. Omitting this would report a deletion that never happened.
+    remote = {}
+    def walk(sha, prefix=""):
+        t = api(f"repos/{REPO}/git/trees/{sha}")
+        for e in t.get("tree", []):
+            if e["type"] == "tree":
+                walk(e["sha"], prefix + e["path"] + "/")
+            elif e["type"] == "blob":
+                remote[prefix + e["path"]] = e["sha"]
+    walk(base_tree, "")
+    dropped = sorted(set(remote) - set(files))
+    for rel in dropped:
+        entries.append({"path": rel, "mode": "100644", "type": "blob", "sha": None})
+        print(f"  delete {rel}")
 
     tree_body = {"tree": entries}
     if base_tree:
