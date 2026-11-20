@@ -29,6 +29,26 @@ separate tracks** and never merges them into a single leaderboard.
 architecture but a **cross-resolution training and transfer protocol**, evaluated
 with an explicit negative-control suite.
 
+### The chosen framework
+
+After reading the field survey (`docs/survey.md`), the framework is:
+
+> **Generation-based conditional flow matching, from H&E to expression, with
+> cross-resolution and cross-section conditioning.**
+
+Justification, briefly: the survey identifies generation-based modelling as the
+frontier and credits flow matching specifically with fewer sampling steps and
+more stable outputs; a deterministic ODE is also more reproducible than
+stochastic diffusion sampling, which matters for a benchmark. It outputs a
+distribution rather than a point estimate, and it is the same formalism
+(conditional flow matching) that AlphaCell uses for perturbation response, so
+the machinery transfers rather than being bespoke.
+
+The novelty is **not** the generator. It is that this dataset measures
+single-cell (Xenium) and whole-transcriptome (Visium) targets **on the same
+specimens**, which permits a supervision signal no single-modality paper can
+construct.
+
 ## 2. The data we actually have
 
 Both modalities are present on overlapping lung adenocarcinoma specimens, which
@@ -125,6 +145,8 @@ held-out slides, the framework is reported as a negative result.
 src/histobridge/
   inventory.py    scan the data roots, emit a manifest with QC fields
   slides.py       unified slide reader (Xenium / Visium / TCGA)
+docs/
+  survey.md       tool survey from Brief Bioinform 2026;27:bbag255
 PLAN.md           staged milestones with deliverable and gate per stage
 ```
 

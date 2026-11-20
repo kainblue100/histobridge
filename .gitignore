@@ -12,6 +12,10 @@ weights/
 *.parquet
 *.csv.gz
 
+# derived artefacts of third-party PDFs: keep the notes, not the copies
+docs/*.pdf
+docs/*.txt
+
 # python
 __pycache__/
 *.py[cod]
